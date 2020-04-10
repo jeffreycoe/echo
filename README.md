@@ -42,6 +42,7 @@ The following high level diagram shows how events flow through `echo`:
 * Google Chat
 * sms (via Twilio)
 * PagerDuty
+* Microsoft Teams
 
 `Echo` is also able to send events within Spinnaker to a predefined url, which is configurable under the `echo-rest` module.
 
