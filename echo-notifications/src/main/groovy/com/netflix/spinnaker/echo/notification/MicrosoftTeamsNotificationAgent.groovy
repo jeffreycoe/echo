@@ -37,6 +37,7 @@ class MicrosoftTeamsNotificationAgent extends AbstractEventNotificationAgent {
     String executionUrl = event.content?.execution?.trigger?.buildInfo?.url
     String executionDescription = event.content?.execution?.description
     String executionName = event.content?.execution?.name
+    String message
     String summary
     String eventName
 
@@ -56,6 +57,13 @@ class MicrosoftTeamsNotificationAgent extends AbstractEventNotificationAgent {
 
     summary += """${status == 'starting' ? 'is' : 'has'} ${status == 'complete' ? 'completed successfully' : status}"""
     summary = preference.customSubject ?: context.customSubject ?: subject
+
+    String customMessage = preference.customMessage ?: event.content?.context?.customMessage
+    if (customMessage) {
+      message = customMessage
+        .replace("{{executionId}}", (String) event.content.execution?.id ?: "")
+        .replace("{{link}}", link ?: "")
+    }
   
     if (executionDescription != null) {
       metadata.put("executionDescription", executionDescription)

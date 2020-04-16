@@ -26,109 +26,96 @@ public class MicrosoftTeamsMessage {
   // https://docs.microsoft.com/en-us/outlook/actionable-messages/message-card-reference
   // https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/connectors-using
   // https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#office-365-connector-card
+  
+  private static String ACTIVITY_TITLE = "Spinnaker Notifications";
+  private static String FACTS_TITLE = "Execution Status";
 
-  static transient String ACTIVITY_TITLE = "Spinnaker Notification";
-  static transient String ACTIVITY_SUBTITLE = "Status";
-  static transient String CONTEXT = "http://schema.org/extensions";
-  static transient boolean MARKDOWN_ENABLED = true;
-  static transient String MESSAGE_TYPE = "MessageCard";
-  static transient String VIEW_ACTION_CONTEXT = "http://schema.org";
-  static transient String VIEW_ACTION_TYPE = "ViewAction";
+  @JsonProperty("@context")
+  public String context = "http://schema.org/extensions";
 
-  @SerializedName("@context")
-  public String context = CONTEXT;
-
-  @SerializedName("@type")
-  public String type = MESSAGE_TYPE;
+  @JsonProperty("@type")
+  public String type = "MessageCard";
 
   public String correlationId;
-  public String themeColor;
-  public Section sections;
   public String summary;
-  public PotentialAction potentialAction;
+  public String themeColor;
 
-  transient String executionUrl;
-  transient HashMap<String, Object> metadata;
+  private transient HashMap<String, Object> metadata;
 
   public MicrosoftTeamsMessage(String message, String summary, HashMap<String, Object> metadata) {
     this.correlationId = this.createRandomUUID();
     this.summary = summary;
     themeColor = this.getThemeColor((String)metadata.get("executionStatus"));
 
-    sections = new Section();
-    potentialAction = new PotentialAction();
-
     if (metadata != null) {
       this.metadata = metadata;
     }
   }
 
-  class Fact {
-    public HashMap<String, String> fact = new HashMap<>();
+  public List<HashMap> getSections() {
+    List<HashMap> sections = new ArrayList<>();
+    HashMap<String, Object> activityTitle = this.getSection("activityTitle", ACTIVITY_TITLE);
 
-    public Fact(String name, String value) {
-      fact.put(name, value);
-    }
+    sections.add(activityTitle);
+    sections.add((HashMap) this.getFacts());
+
+    return sections;
   }
 
-  class Facts {
-    public List<Fact> facts = new ArrayList<>();
+  public HashMap<String, Object> getSection(String name, Object obj) {
+    HashMap<String, Object> section = new HashMap<>();
 
-    public Facts {
-      if (metadata.containsKey("buildNumber")) {
-        facts.add(new Fact("Build Number", (Integer)metadata.get("buildNumber")));
-      }
+    section.put(name, obj);
 
-      facts.add(new Fact("Description", (String)metadata.get("executionDescription")));
-      facts.add(new Fact("Execution Name", (String)metadata.get("executionName")));
-
-      if (metadata.containsKey("eventName")) {
-        facts.add(new Fact("Event Name", (String)metadata.get("eventName")));
-      }
-
-      facts.add(new Fact("Status", (String)metadata.get("executionStatus")));
-      facts.add(new Fact("Summary", (String)metadata.get("executionSummary")));
-    }
+    return section;
   }
 
-  class PotentialAction {
-    public List<ViewAction> potentialAction = new ArrayList<>();
+  private HashMap<String, Object> getFacts() {
+    HashMap<String, Object> facts = new HashMap<>();
+    List<HashMap> factsList = new ArrayList<>();
 
-    public PotentialAction() {
-      if (executionUrl != null) {
-        potentialAction.add(new ViewAction());
-      }      
+    factsList.add((HashMap) this.getFact("Build Number", (String) metadata.get("buildNumber")));
+    factsList.add((HashMap) this.getFact("Description", (String) metadata.get("description")));
+    factsList.add((HashMap) this.getFact("Execution Name", (String) metadata.get("executionName")));
+
+    if (message != "") {
+      factsList.add((HashMap) this.getFact("Message", message));
     }
+
+    factsList.add((HashMap) this.getFact("Pipeline / Stage Name", (String) metadata.get("eventName")));
+    factsList.add((HashMap) this.getFact("Status", (String) metadata.get("executionStatus")));
+    factsList.add((HashMap) this.getFact("Summary", (String) metadata.get("executionSummary")));
+
+    facts.put("title", FACTS_TITLE);
+    facts.put("facts", factsList);
+
+    return facts;
   }
 
-  class Section {
-    public HashMap<String, Object> title = new HashMap<>();
-    public HashMap<String, Object> facts = new HashMap<>();
+  public HashMap<String, String> getFact(String name, String value) {
+    HashMap<String, String> fact = new HashMap<>();
 
-    public Section() {
-      title.put("activityTitle", ACTIVITY_TITLE);
-      title.put("markdown", MARKDOWN_ENABLED);
+    fact.put("name", name);
+    fact.put("value", value);
 
-      facts.put("title", "Execution Status");
-      facts.put("facts", new Facts());
-    }
+    return fact;
   }
 
-  class ViewAction {
-    @SerializedName("@context")
-    public String potentialActionContext = VIEW_ACTION_CONTEXT;
+  public List<HashMap> getPotentialAction() {
+    List<HashMap> potentialAction = new ArrayList<>();
+    HashMap<String, Object> action = new HashMap<>();
+    ArrayList<String> targets = new ArrayList<>();
 
-    @SerializedName("@type")
-    public String potentialActionType = VIEW_ACTION_TYPE;
+    targets.add((String) metadata.get("executionUrl"));
 
-    public String name = "View Execution";
-    public List<String> target = new ArrayList<>();
+    action.put("@context", "http://schema.org");
+    action.put("@type", "ViewAction");
+    action.put("name", "View Execution");
+    action.put("target", targets);
 
-    public ViewAction() {
-      if (metadata.containsKey("executionUrl")) {
-        target.add((String)metadata.get("executionUrl"));
-      }
-    }
+    potentialAction.add(action);
+
+    return potentialAction;
   }
 
   private static String getThemeColor(String status) {
@@ -147,9 +134,6 @@ public class MicrosoftTeamsMessage {
   }
 
   private static String createRandomUUID() {
-    UUID uuid = UUID.randomUUID();
-    String uuidString = uuid.toString();
-
-    return uuidString;
+    return UUID.randomUUID().toString();
   }
 }
