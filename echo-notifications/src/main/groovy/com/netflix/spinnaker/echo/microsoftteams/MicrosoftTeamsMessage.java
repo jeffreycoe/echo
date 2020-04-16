@@ -16,6 +16,7 @@
 
 package com.netflix.spinnaker.echo.microsoftteams;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +27,7 @@ public class MicrosoftTeamsMessage {
   // https://docs.microsoft.com/en-us/outlook/actionable-messages/message-card-reference
   // https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/connectors-using
   // https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#office-365-connector-card
-  
+
   private static String ACTIVITY_TITLE = "Spinnaker Notifications";
   private static String FACTS_TITLE = "Execution Status";
 
@@ -40,12 +41,14 @@ public class MicrosoftTeamsMessage {
   public String summary;
   public String themeColor;
 
+  private transient String message;
   private transient HashMap<String, Object> metadata;
 
   public MicrosoftTeamsMessage(String message, String summary, HashMap<String, Object> metadata) {
     this.correlationId = this.createRandomUUID();
+    this.message = message;
     this.summary = summary;
-    themeColor = this.getThemeColor((String)metadata.get("executionStatus"));
+    themeColor = this.getThemeColor((String) metadata.get("executionStatus"));
 
     if (metadata != null) {
       this.metadata = metadata;
@@ -82,7 +85,8 @@ public class MicrosoftTeamsMessage {
       factsList.add((HashMap) this.getFact("Message", message));
     }
 
-    factsList.add((HashMap) this.getFact("Pipeline / Stage Name", (String) metadata.get("eventName")));
+    factsList.add(
+        (HashMap) this.getFact("Pipeline / Stage Name", (String) metadata.get("eventName")));
     factsList.add((HashMap) this.getFact("Status", (String) metadata.get("executionStatus")));
     factsList.add((HashMap) this.getFact("Summary", (String) metadata.get("executionSummary")));
 
@@ -129,7 +133,7 @@ public class MicrosoftTeamsMessage {
     } else {
       color = "0076D7";
     }
-    
+
     return color;
   }
 

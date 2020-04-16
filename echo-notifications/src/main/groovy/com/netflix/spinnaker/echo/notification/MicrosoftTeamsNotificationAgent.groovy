@@ -16,8 +16,17 @@
 
 package com.netflix.spinnaker.echo.notification;
 
+import com.netflix.spinnaker.echo.microsoftteams.MicrosoftTeamsMessage
+import com.netflix.spinnaker.echo.microsoftteams.MicrosoftTeamsService
+import com.netflix.spinnaker.echo.api.events.Event
+import groovy.util.logging.Slf4j
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.stereotype.Service
+import retrofit.client.Response
+
 @Slf4j
-@ConditionalOnProperty('microsoft-teams.enabled')
+@ConditionalOnProperty("microsoft-teams.enabled")
 @Service
 class MicrosoftTeamsNotificationAgent extends AbstractEventNotificationAgent {
 

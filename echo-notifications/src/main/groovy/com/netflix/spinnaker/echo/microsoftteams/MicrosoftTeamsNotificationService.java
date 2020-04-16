@@ -20,13 +20,12 @@ import com.netflix.spinnaker.echo.api.Notification;
 import com.netflix.spinnaker.echo.controller.EchoResponse;
 import com.netflix.spinnaker.echo.notification.NotificationService;
 import com.netflix.spinnaker.echo.notification.NotificationTemplateEngine;
-import java.util.Collection;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConditionalOnProperty('microsoft-teams.enabled')
+@ConditionalOnProperty("microsoft-teams.enabled")
 class MicrosoftTeamsNotificationService implements NotificationService {
 
   @Autowired MicrosoftTeamsService teamsService;
@@ -39,17 +38,18 @@ class MicrosoftTeamsNotificationService implements NotificationService {
 
   @Override
   public EchoResponse.Void handle(Notification notification) {
-    String message = notificationTemplateEngine.build(notification, NotificationTemplateEngine.Type.BODY);
-    String summary = notificationTemplateEngine.build(notification, NotificationTemplateEngine.Type.SUBJECT);
-    
-    for (String webhookUrl : notification.getTo()) {
-      log.info("Sending Microsoft Teams message to webhook URL " + webhookUrl);
+    String message =
+        notificationTemplateEngine.build(notification, NotificationTemplateEngine.Type.BODY);
+    String summary =
+        notificationTemplateEngine.build(notification, NotificationTemplateEngine.Type.SUBJECT);
 
+    for (String webhookUrl : notification.getTo()) {
       String baseUrl = "https://outlook.office.com/webhook/";
       String completeLink = webhookUrl;
       String partialWebhookURL = completeLink.substring(baseUrl.length());
 
-      teamsService.sendMessage(partialWebhookURL, new MicrosoftTeamsMessage(message, summary, null))
+      teamsService.sendMessage(
+          partialWebhookURL, new MicrosoftTeamsMessage(message, summary, null));
     }
 
     return new EchoResponse.Void();
